@@ -1,0 +1,19 @@
+import bcrypt
+
+def test():
+    password1 = "password1234"
+    passwordbytes = bytes(password1, "ascii")
+    salt1 = bcrypt.gensalt(10)
+    hash = bcrypt.hashpw(passwordbytes, salt1)
+    print(hash)
+
+    password2 = "password1234"
+    passwordbytes2 = bytes(password2, "ascii")
+    salt2 = bcrypt.gensalt(15)
+    hash2 = bcrypt.hashpw(passwordbytes2, salt2)
+    print(hash2)
+    print(bcrypt.checkpw(passwordbytes, hash))
+    print(bcrypt.checkpw(passwordbytes2, hash))
+    print(bcrypt.checkpw(passwordbytes2, hash2))
+
+test()
