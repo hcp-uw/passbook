@@ -1,26 +1,47 @@
 import sqlite3 
 import random 
 import string 
-#test2
+import bcrypt
+
 #connect to database and create a cursor which allows you to modify and get information from the database
+# conn = sqlite3.connect('password_manager.db')
+# cursor = conn.cursor()
 conn = sqlite3.connect('password_manager.db')
 cursor = conn.cursor()
 
+def openMasterPass():
+    try:    
+        cursor.execute(' ' 'CREATE TABLE masterpassword (username TEXT PRIMARY KEY, masterpw TEXT)' ' ')
+        print("Welcome to your password manager. Please create an account!")
+        userName = input("Enter a username: ")
+        masterPass = input("Enter your master password: ")
+        
+        hashedPass = bcrypt.hashpw(masterPass.encode('utf8'), bcrypt.gensalt())
+
+        query = "INSERT INTO masterpassword(username, masterpw) VALUES (?,?);"
+        cursor.execute(query, (userName, hashedPass))
+        conn.commit()
+    except:
+        print("Welcome back to your password manager!")
+
+        
 #opendb method, takes masterpassword entered as a parameter (see pwmanager.py for funciton call)
 #if masterpassword entered equals masterpassword set by user (not updated yet, masterpassword is just "masterpassword" for now)
 #attempt to create a database called password with columns (website, username, and password) all of type TEXT
 #if the database exists, prints "You are in!"
 #conn.commit() must be called every time you make a change to a database, in this case you are making a database if it doesn't exist
-def opendb(masterpassword):
-    if(masterpassword == "masterpassword"):
+def opendb(userName, masterPassword):
+    cursor.execute("SELECT masterpw FROM masterpassword WHERE username=?", (userName,))
+    data = cursor.fetchone()
+
+    if(bcrypt.checkpw(masterPassword, bytes(data[0]))):
         try:
+            print("You are in!")
             cursor.execute(' ' 'CREATE TABLE password (website TEXT PRIMARY KEY, username TEXT, password TEXT)' ' ')
+            conn.commit()
         except:
             print("You are in!")
             print()
-
-    conn.commit()
-
 
 def addPassword():
     #prompts user for website name
