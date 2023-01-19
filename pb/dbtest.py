@@ -1,7 +1,7 @@
 import sqlite3 
 import random 
 import string 
-
+#test2
 #connect to database and create a cursor which allows you to modify and get information from the database
 conn = sqlite3.connect('password_manager.db')
 cursor = conn.cursor()
