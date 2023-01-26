@@ -4,8 +4,6 @@ import string
 import bcrypt
 
 #connect to database and create a cursor which allows you to modify and get information from the database
-# conn = sqlite3.connect('password_manager.db')
-# cursor = conn.cursor()
 conn = sqlite3.connect('password_manager.db')
 cursor = conn.cursor()
 
@@ -36,12 +34,13 @@ def opendb(userName, masterPassword):
 
     if(bcrypt.checkpw(masterPassword, bytes(data[0]))):
         try:
-            print("You are in!")
             cursor.execute(' ' 'CREATE TABLE password (website TEXT PRIMARY KEY, username TEXT, password TEXT)' ' ')
             conn.commit()
         except:
             print("You are in!")
             print()
+
+
 
 def addPassword():
     #prompts user for website name
