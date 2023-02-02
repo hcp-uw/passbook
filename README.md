@@ -1,1 +1,1 @@
-# passbook
+# passbook: this project is a password manager which allows a user to store, access, and update their passwords. The program is written in Python and information is stored on a SQLite database. Data is protected using BCrypt hashing, Fernet encryption, and PBKDF2 key derivation.
