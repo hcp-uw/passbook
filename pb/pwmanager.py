@@ -1,12 +1,11 @@
 from dbtest import *
 
-print("Welcome to your password manager!")
-masterPassword = input("Please input your master password: ")
+openMasterPass()
 
-while masterPassword != "masterpassword":
-    masterPassword = input("The password you entered is incorrect, please try again: ")
+userName = input("Please input your username: ")
+masterPassword = input("Please input your master password: ").encode('utf8')
 
-opendb(masterPassword)
+opendb(userName, masterPassword)
 
 userCommand = ""
 while userCommand != "6":
