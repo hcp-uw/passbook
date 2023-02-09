@@ -2,6 +2,15 @@ import sqlite3
 import random 
 import string 
 import bcrypt
+from cryptography.fernet import Fernet
+import pbkdf2
+import bcrypt
+import os
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+import base64
+from cryptography.hazmat.backends import default_backend
+import pprint
 
 #connect to database and create a cursor which allows you to modify and get information from the database
 conn = sqlite3.connect('password_manager.db')
@@ -23,6 +32,7 @@ def openMasterPass():
 
 
 def addMasterPass():
+    global passwordTableName
     userName = input("Enter a username: ")
     masterPass = input("Enter your master password: ")
         
@@ -33,9 +43,31 @@ def addMasterPass():
     query = "INSERT INTO masterpassword(username, masterpw, dbname) VALUES (?,?,?);"
     cursor.execute(query, (userName, hashedPass, randomName))
     conn.commit()
-            
 
-        
+    # this is keyDerivation, didn't want to make it a nested method bc parameters
+    # generate another salt
+    salt = os.urandom(16)
+    # generate derivation function
+    kdf = PBKDF2HMAC (
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100,
+        backend=default_backend()
+    )
+
+    # pull hashed mp from db
+    cursor.execute("SELECT masterpw FROM masterpassword WHERE username=?", (userName,))
+    storedMPass = bytes(cursor.fetchone()[0])
+    key = base64.urlsafe_b64encode(kdf.derive(storedMPass))
+
+    # store as another tuple in db? globalize?
+    # this is not working vvvvv
+    cursor.execute("INSERT INTO masterpassword (username, masterpw, dbname) VALUES (?,?,?)", ("keyDerivation", key, randomName))
+    # query = "INSERT INTO " + passwordTableName + " (website, username, password) VALUES (?,?,?);"
+    # cursor.execute(query, ("keyDerivation", "username", key))
+    conn.commit()
+                   
 #opendb method, takes masterpassword entered as a parameter (see pwmanager.py for funciton call)
 #if masterpassword entered equals masterpassword set by user (not updated yet, masterpassword is just "masterpassword" for now)
 #attempt to create a database called password with columns (website, username, and password) all of type TEXT
@@ -57,7 +89,6 @@ def opendb(userName, masterPassword):
         except:
             print("You are in!")
             print()
-
 
 
 def addPassword():
@@ -103,11 +134,30 @@ def addPassword():
 
         if userPass == confirmPass or userOption == "generate":
             userName = input("Please input username: ")
+            userPass = encryptPW(userPass)
             query = "INSERT INTO " + passwordTableName + " (website, username, password) VALUES (?,?,?);"
             cursor.execute(query, (websiteName, userName, userPass))
             conn.commit()
             print("Password successfully added!")
             print()
+
+# gotta pass in keyDeriv somehow
+# either somehow pass it in or make global which is prolly unsafe
+def encryptPW(inputPW):
+    cursor.execute('SELECT masterpw FROM masterpassword WHERE username="keyDerivation"')
+    # username, masterpw, dbname) VALUES (?,?,?)", ("keyDerivation", key, randomName
+    keyDeriv = bytes(cursor.fetchone()[0])
+    # not sure about this guy
+    encryptObject = Fernet(keyDeriv)
+    return encryptObject.encrypt(inputPW.encode('utf-8'))
+
+# decrypts ofc
+def decryptPW(inputPW):
+    cursor.execute('SELECT password FROM ' + passwordTableName + ' WHERE website="keyDerivation"')
+    keyDeriv = bytes(cursor.fetchone()[0])
+    # this was previously causing a problem^^^^
+    decryptionObject = Fernet(keyDeriv)
+    return (decryptionObject.decrypt(inputPW).decode())
 
 
 #query variable contains command to select all entries in password database where website equals user input
@@ -127,6 +177,7 @@ def changePassword():
     else:
         newPassword = input("What is the new password? ")
         update = "UPDATE " + passwordTableName + " SET password=? WHERE website=?"
+        newPassword = encryptPW(newPassword)
         cursor.execute(update, [newPassword, websiteName])
         print("Password changed successfully!")
         conn.commit()
@@ -140,6 +191,7 @@ def passwordLookup():
     websiteName = input("Please enter the name of the website you would like to look up the password to: ").lower()
     cursor.execute("SELECT * FROM " + passwordTableName + " WHERE website=?", (websiteName,))
     data = cursor.fetchall()
+    data = decryptPW(data)
     if data:
         print(data)
     else:
@@ -156,6 +208,7 @@ def clearPasswords():
     print()
     conn.commit()
 
+# this is going to have to be edited a bit because passwords are encrypted in db
 #selects all rows from password database
 #prints every row in password database
 def showPasswords():
