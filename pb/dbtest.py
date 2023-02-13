@@ -141,21 +141,18 @@ def addPassword():
             print("Password successfully added!")
             print()
 
-# gotta pass in keyDeriv somehow
-# either somehow pass it in or make global which is prolly unsafe
+# encrypts pw
 def encryptPW(inputPW):
     cursor.execute('SELECT masterpw FROM masterpassword WHERE username="keyDerivation"')
-    # username, masterpw, dbname) VALUES (?,?,?)", ("keyDerivation", key, randomName
-    keyDeriv = bytes(cursor.fetchone()[0])
-    # not sure about this guy
+    keyDeriv = (cursor.fetchone()[0])
     encryptObject = Fernet(keyDeriv)
     return encryptObject.encrypt(inputPW.encode('utf-8'))
 
 # decrypts ofc
 def decryptPW(inputPW):
-    cursor.execute('SELECT password FROM ' + passwordTableName + ' WHERE website="keyDerivation"')
+    inputPW = ((inputPW[0])[2])
+    cursor.execute('SELECT masterpw FROM masterpassword WHERE username="keyDerivation"')
     keyDeriv = bytes(cursor.fetchone()[0])
-    # this was previously causing a problem^^^^
     decryptionObject = Fernet(keyDeriv)
     return (decryptionObject.decrypt(inputPW).decode())
 
