@@ -1,0 +1,3 @@
+([('pwmanager',
+   '/Users/madbrum/repos/passbook/pb/dist/pwmanager',
+   'EXECUTABLE')],)
