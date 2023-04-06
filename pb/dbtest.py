@@ -17,10 +17,12 @@ conn = sqlite3.connect('password_manager.db')
 cursor = conn.cursor()
 
 passwordTableName = ''
+masterPass = ' '
+userName = ''
 
 def openMasterPass():
     try:    
-        cursor.execute(' ' 'CREATE TABLE masterpassword (username TEXT PRIMARY KEY, masterpw TEXT, dbname TEXT)' ' ')
+        cursor.execute(' ' 'CREATE TABLE masterpassword (username TEXT PRIMARY KEY, masterpw TEXT, dbname TEXT, salt TEXT)' ' ')
         print("Welcome to your password manager. Please create an account!")
         addMasterPass()
     except:
@@ -33,39 +35,23 @@ def openMasterPass():
 
 def addMasterPass():
     global passwordTableName
+    global masterPass
+    global userName
     userName = input("Enter a username: ")
     masterPass = input("Enter your master password: ")
-        
+
+
     hashedPass = bcrypt.hashpw(masterPass.encode('utf8'), bcrypt.gensalt())
 
     randomName = ''.join(random.choices(string.ascii_lowercase, k=5))
 
-    query = "INSERT INTO masterpassword(username, masterpw, dbname) VALUES (?,?,?);"
-    cursor.execute(query, (userName, hashedPass, randomName))
-    conn.commit()
-
     # this is keyDerivation, didn't want to make it a nested method bc parameters
     # generate another salt
     salt = os.urandom(16)
-    # generate derivation function
-    kdf = PBKDF2HMAC (
-        algorithm=hashes.SHA256(),
-        length=32,
-        salt=salt,
-        iterations=100,
-        backend=default_backend()
-    )
-
-    # pull hashed mp from db
-    cursor.execute("SELECT masterpw FROM masterpassword WHERE username=?", (userName,))
-    storedMPass = bytes(cursor.fetchone()[0])
-    key = base64.urlsafe_b64encode(kdf.derive(storedMPass))
-
-    # store as another tuple in db? globalize?
-    # this is not working vvvvv
-    cursor.execute("INSERT INTO masterpassword (username, masterpw, dbname) VALUES (?,?,?)", ("keyDerivation", key, randomName))
-    # query = "INSERT INTO " + passwordTableName + " (website, username, password) VALUES (?,?,?);"
-    # cursor.execute(query, ("keyDerivation", "username", key))
+    query = "INSERT INTO masterpassword(username, masterpw, dbname, salt) VALUES (?,?,?,?);"
+    cursor.execute(query, (userName, hashedPass, randomName, salt))
+    conn.commit()
+ 
     conn.commit()
                    
 #opendb method, takes masterpassword entered as a parameter (see pwmanager.py for funciton call)
@@ -143,17 +129,42 @@ def addPassword():
 
 # encrypts pw
 def encryptPW(inputPW):
-    cursor.execute('SELECT masterpw FROM masterpassword WHERE username="keyDerivation"')
-    keyDeriv = (cursor.fetchone()[0])
-    encryptObject = Fernet(keyDeriv)
+    global userName
+    global masterPass
+
+    query = "SELECT salt FROM masterpassword WHERE userName = ?"
+    cursor.execute(query, (userName,))
+    salt = cursor.fetchone()[0]
+    kdf = PBKDF2HMAC (
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100,
+        backend=default_backend()
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(masterPass))
+    encryptObject = Fernet(key)
     return encryptObject.encrypt(inputPW.encode('utf-8'))
 
 # decrypts ofc
 def decryptPW(inputPW):
+    global userName
+    global masterPass
     inputPW = ((inputPW[0])[2])
-    cursor.execute('SELECT masterpw FROM masterpassword WHERE username="keyDerivation"')
-    keyDeriv = bytes(cursor.fetchone()[0])
-    decryptionObject = Fernet(keyDeriv)
+
+    query = "SELECT salt FROM masterpassword WHERE userName = ?"
+    cursor.execute(query, (userName,))
+    salt = cursor.fetchone()[0]
+    kdf = PBKDF2HMAC (
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=100,
+        backend=default_backend()
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(masterPass))
+
+    decryptionObject = Fernet(key)
     return (decryptionObject.decrypt(inputPW).decode())
 
 
