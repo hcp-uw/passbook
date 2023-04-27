@@ -1,11 +1,11 @@
 from dbtest import *
 
-openMasterPass()
+signin = openMasterPass()
 
-userName = input("Please input your username: ")
-masterPassword = input("Please input your master password: ").encode('utf8')
-
-opendb(userName, masterPassword)
+if not(signin):
+    userName = input("Please input your username: ")
+    masterPassword = input("Please input your master password: ").encode('utf8')
+    opendb(userName, masterPassword)
 
 userCommand = ""
 while userCommand != "6":

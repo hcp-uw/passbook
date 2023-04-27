@@ -3,7 +3,6 @@ import random
 import string 
 import bcrypt
 from cryptography.fernet import Fernet
-import pbkdf2
 import bcrypt
 import os
 from cryptography.hazmat.primitives import hashes
@@ -25,11 +24,15 @@ def openMasterPass():
         cursor.execute(' ' 'CREATE TABLE masterpassword (username TEXT PRIMARY KEY, masterpw TEXT, dbname TEXT, salt TEXT)' ' ')
         print("Welcome to your password manager. Please create an account!")
         addMasterPass()
+        return True
     except:
         print("Welcome back to your password manager!")
         createNew = input("Would you like to sign up or sign in? ")
         if createNew == "sign up":
             addMasterPass()
+            return True
+        else:
+            return False
         
 
 
@@ -38,21 +41,30 @@ def addMasterPass():
     global masterPass
     global userName
     userName = input("Enter a username: ")
-    masterPass = input("Enter your master password: ")
+    cursor.execute("SELECT username FROM masterpassword WHERE username=?", (userName,))
+    data = cursor.fetchall()
+    while data:
+        print("This user already exists!")
+        userName = input("Enter a username: ")
+        cursor.execute("SELECT username FROM masterpassword WHERE username=?", (userName,))
+        data = cursor.fetchall()
+    else:
+        masterPass = input("Enter your master password: ")
 
+        hashedPass = bcrypt.hashpw(masterPass.encode('utf8'), bcrypt.gensalt())
 
-    hashedPass = bcrypt.hashpw(masterPass.encode('utf8'), bcrypt.gensalt())
+        randomName = ''.join(random.choices(string.ascii_lowercase, k=5))
 
-    randomName = ''.join(random.choices(string.ascii_lowercase, k=5))
-
-    # this is keyDerivation, didn't want to make it a nested method bc parameters
-    # generate another salt
-    salt = os.urandom(16)
-    query = "INSERT INTO masterpassword(username, masterpw, dbname, salt) VALUES (?,?,?,?);"
-    cursor.execute(query, (userName, hashedPass, randomName, salt))
-    conn.commit()
- 
-    conn.commit()
+        # this is keyDerivation, didn't want to make it a nested method bc parameters
+        # generate another salt
+        salt = os.urandom(16)
+        query = "INSERT INTO masterpassword(username, masterpw, dbname, salt) VALUES (?,?,?,?);"
+        cursor.execute(query, (userName, hashedPass, randomName, salt))
+        conn.commit()
+    
+        conn.commit()
+        encodedMP = masterPass.encode('utf8')
+        opendb(userName, encodedMP)
                    
 #opendb method, takes masterpassword entered as a parameter (see pwmanager.py for funciton call)
 #if masterpassword entered equals masterpassword set by user (not updated yet, masterpassword is just "masterpassword" for now)
