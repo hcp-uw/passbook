@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import base64
 from cryptography.hazmat.backends import default_backend
 import pprint
+import subprocess
 
 #connect to database and create a cursor which allows you to modify and get information from the database
 conn = sqlite3.connect('password_manager.db')
@@ -217,7 +218,8 @@ def passwordLookup():
     data = cursor.fetchall()
     if data:
         data = decryptPW(data)
-        print(data)
+        subprocess.run("pbcopy", text=True, input=data)
+        print("Your password has been copied to the clipboard.")
     else:
         print("Login information for the site doesn't exist!")
 
