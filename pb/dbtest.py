@@ -71,8 +71,12 @@ def addMasterPass():
 #attempt to create a database called password with columns (website, username, and password) all of type TEXT
 #if the database exists, prints "You are in!"
 #conn.commit() must be called every time you make a change to a database, in this case you are making a database if it doesn't exist
-def opendb(userName, masterPassword):
+def opendb(userNameP, masterPassword):
     global passwordTableName 
+    global userName
+    global masterPass
+    userName = userNameP
+    masterPass = masterPassword
     cursor.execute("SELECT masterpw FROM masterpassword WHERE username=?", (userName,))
     data = cursor.fetchone()
 
@@ -211,8 +215,8 @@ def passwordLookup():
     websiteName = input("Please enter the name of the website you would like to look up the password to: ").lower()
     cursor.execute("SELECT * FROM " + passwordTableName + " WHERE website=?", (websiteName,))
     data = cursor.fetchall()
-    data = decryptPW(data)
     if data:
+        data = decryptPW(data)
         print(data)
     else:
         print("Login information for the site doesn't exist!")

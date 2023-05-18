@@ -1,0 +1,36 @@
+BUG ONE:
+
+Please select an action using its corresponding number: 2
+
+Please enter the name of the website you would like to look up the password to: mad
+Login information for the site doesn't exist!
+
+What would you like to do?
+1. Create new password
+2. Look up a password
+3. Print password list
+4. Change an existing password
+5. Clear all passwords
+6. Quit
+
+Please select an action using its corresponding number: 1
+
+What is the name of the website you would like to add a password for? google
+Would you like to create your own password or have one generated for you? Please type "create" or "generate": create
+Please enter the password: wah
+Please retype password for confirmation: wah
+Please input username: mad
+Traceback (most recent call last):
+  File "/Users/madbrum/repos/passbook/pb/pwmanager.py", line 23, in <module>
+    addPassword()
+  File "/Users/madbrum/repos/passbook/pb/dbtest.py", line 135, in addPassword
+    userPass = encryptPW(userPass)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/Users/madbrum/repos/passbook/pb/dbtest.py", line 149, in encryptPW
+    salt = cursor.fetchone()[0]
+           ~~~~~~~~~~~~~~~~~^^^
+TypeError: 'NoneType' object is not subscriptable
+
+
+
+
